@@ -19,6 +19,7 @@ export type BaseRarity =
 //   (Parallel) or (Alternate Art)  on other → 'Alt Art'
 //   (Manga)                        on any   → 'Manga'
 //   (Wanted Poster)                on any   → 'SP'  (rarity promotion, not its own bucket)
+//   (SP)                           on any   → 'SP'  (Special print; base rarity kept in extendedData)
 //   (Gold)                         on DON!! → 'Gold DON!!'
 export type Rarity =
   | BaseRarity
