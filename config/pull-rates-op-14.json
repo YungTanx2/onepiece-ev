@@ -1,0 +1,6 @@
+{
+  "_comment": "OP-14 The Azure Sea's Seven — confirmed to have TR (Treasure Rare) and SP rarities. Rates are placeholders; update with community-verified data.",
+  "hitDistribution": {
+    "TR": { "oneInXPacks": 200, "_comment": "PLACEHOLDER — Treasure Rare rate not confirmed" }
+  }
+}

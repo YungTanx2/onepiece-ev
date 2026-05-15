@@ -1,0 +1,13 @@
+{
+  "_comment": "Standard booster default — applies to OP-XX and EB-XX sets unless a per-set file overrides specific keys. Global rates (Manga, SP, Alt Art Leader) are merged on top automatically. Rates as 1-in-X packs.",
+  "packsPerBox": 24,
+  "commonCount": 7,
+  "uncommonCount": 3,
+  "rareCount": 1,
+  "leaderProbabilityPerPack": { "oneInXPacks": 6, "_comment": "~4 Leaders per 24-pack box" },
+  "hitDistribution": {
+    "SR":      { "oneInXPacks": 2,   "_comment": "Super Rare — 12 per box" },
+    "SEC":     { "oneInXPacks": 100, "_comment": "Secret Rare — ~1 per 4 boxes" },
+    "Alt Art": { "oneInXPacks": 12,  "_comment": "(Parallel)/(Alternate Art) non-Leader — 2 per box" }
+  }
+}

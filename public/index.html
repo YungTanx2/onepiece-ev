@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>One Piece EV Calculator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #fff5f5;
+      color: #1e293b;
+      line-height: 1.6;
+      padding: 24px;
+    }
+
+    h1 { font-size: 2rem; font-weight: 800; color: #0f172a; }
+    h2 { font-size: 1.25rem; font-weight: 700; color: #1e293b; margin-bottom: 12px; }
+    .subtitle { color: #64748b; font-size: 0.9rem; margin-top: 4px; }
+
+    .page-header {
+      margin-bottom: 32px;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 20px;
+    }
+
+    /* ── Controls ────────────────────────────────────────────────────────── */
+    .controls {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 32px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 20px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #dc2626;
+      font-weight: 600;
+    }
+
+    .field input[type="number"],
+    .field select {
+      background: #fff5f5;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      color: #1e293b;
+      font-size: 0.95rem;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .field input[type="number"] { width: 180px; }
+    .field select { width: 260px; cursor: pointer; }
+
+    .field input[type="number"]:focus,
+    .field select:focus { border-color: #dc2626; }
+
+    .btn-analyze {
+      background: #dc2626;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 10px 28px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-analyze:hover:not(:disabled) { background: #b91c1c; }
+    .btn-analyze:active:not(:disabled) { transform: scale(0.97); }
+    .btn-analyze:disabled { background: #fecaca; color: #fca5a5; cursor: not-allowed; }
+
+    .btn-pull-rates {
+      background: none;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      color: #64748b;
+      font-size: 0.85rem;
+      padding: 9px 16px;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-pull-rates:hover { border-color: #dc2626; color: #dc2626; }
+    .btn-pull-rates.has-custom { border-color: #f59e0b; color: #f59e0b; }
+
+    /* ── Progress ────────────────────────────────────────────────────────── */
+    #progress-section {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      display: none;
+    }
+
+    .progress-bar-container {
+      background: #e2e8f0;
+      border-radius: 9999px;
+      height: 12px;
+      position: relative;
+      overflow: hidden;
+      margin: 12px 0 8px;
+    }
+
+    .progress-bar-fill {
+      background: #dc2626;
+      height: 100%;
+      border-radius: 9999px;
+      width: 0%;
+      transition: width 0.35s ease;
+    }
+
+    .progress-bar-label {
+      position: absolute;
+      right: 8px;
+      top: -1px;
+      font-size: 10px;
+      color: #64748b;
+    }
+
+    .progress-status { font-size: 0.85rem; color: #475569; margin-top: 4px; }
+    .error-banner { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; color: #dc2626; padding: 12px 16px; margin-top: 12px; font-size: 0.9rem; }
+
+    /* ── Results ─────────────────────────────────────────────────────────── */
+    #results-section { display: none; }
+
+    .results-header { margin-bottom: 24px; }
+    .results-title { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+
+    .summary-banner {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+
+    .stat-card {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 20px 28px;
+      min-width: 160px;
+      flex: 1;
+    }
+
+    .stat-card .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; font-weight: 600; margin-bottom: 6px; }
+    .stat-card .value { font-size: 1.9rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+    .stat-card .sub   { font-size: 0.78rem; color: #64748b; margin-top: 4px; }
+
+    /* Slot breakdown row */
+    .slot-breakdown {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 0 0 24px;
+    }
+    .slot-chip {
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      color: #475569;
+      flex: 1;
+      min-width: 100px;
+      text-align: center;
+    }
+    .slot-chip .chip-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; display: block; margin-bottom: 2px; }
+    .slot-chip .chip-val { font-size: 1rem; font-weight: 700; color: #1e293b; }
+
+    section {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    /* ── Tables ──────────────────────────────────────────────────────────── */
+    .table-wrapper { overflow-x: auto; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th { text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; font-weight: 600; padding: 6px 12px; border-bottom: 2px solid #e2e8f0; }
+    td { padding: 9px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fff5f5; }
+
+    td[data-img-src] { cursor: default; }
+
+    .spike-loading { color: #94a3b8; font-size: 0.8rem; }
+    .weekly-up   { color: #16a34a; font-weight: 600; cursor: default; }
+    .weekly-down { color: #ef4444; font-weight: 600; cursor: default; }
+    .weekly-flat { color: #94a3b8; }
+
+    .disclaimer {
+      font-size: 0.82rem;
+      color: #64748b;
+      line-height: 1.7;
+    }
+    .disclaimer a { color: #dc2626; text-decoration: none; }
+    .disclaimer a:hover { text-decoration: underline; }
+
+    /* ── Spiking Cards ───────────────────────────────────────────────────── */
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+    .spike-tab { padding: 6px 16px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; color: #dc2626; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
+    .spike-tab.active { background: #dc2626; color: #fff; }
+    .scan-progress-line { font-size: 0.8rem; color: #64748b; margin-bottom: 8px; min-height: 1em; }
+    .empty-msg { color: #64748b; font-size: 0.9rem; padding: 12px; }
+
+    /* ── Pull Rates Modal ────────────────────────────────────────────────── */
+    #rates-modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    #rates-modal-overlay[style*="block"] { display: flex; }
+
+    #rates-modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px;
+      max-width: 540px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .rates-modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    #rates-modal-close {
+      background: none; border: none; font-size: 1.5rem; cursor: pointer;
+      color: #64748b; padding: 0 4px; line-height: 1;
+    }
+    #rates-modal-close:hover { color: #1e293b; }
+
+    .rates-section-title {
+      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
+      color: #64748b; font-weight: 700; margin: 18px 0 8px;
+      padding-bottom: 4px; border-bottom: 1px solid #e2e8f0;
+    }
+    .rates-field {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 0; gap: 12px;
+    }
+    .rates-field label { font-size: 0.88rem; color: #1e293b; flex: 1; }
+    .rates-input-row { display: flex; align-items: center; gap: 6px; }
+    .rates-input-row input[type="number"] {
+      width: 90px; border: 1px solid #cbd5e1; border-radius: 6px;
+      padding: 5px 8px; font-size: 0.88rem; text-align: right;
+      background: #fff5f5; color: #1e293b; outline: none;
+    }
+    .rates-input-row input[type="number"]:focus { border-color: #dc2626; }
+    .rates-suffix { font-size: 0.8rem; color: #94a3b8; white-space: nowrap; }
+
+    .rates-modal-footer {
+      display: flex; align-items: center; justify-content: flex-end;
+      margin-top: 20px; gap: 10px; flex-wrap: wrap;
+    }
+    #rates-custom-indicator { font-size: 0.8rem; color: #f59e0b; margin-right: auto; font-weight: 600; }
+    .btn-rates-reset {
+      background: none; border: 1px solid #cbd5e1; border-radius: 8px;
+      padding: 8px 16px; cursor: pointer; font-size: 0.88rem; color: #64748b;
+    }
+    .btn-rates-reset:hover { border-color: #ef4444; color: #ef4444; }
+    .btn-rates-save {
+      background: #dc2626; color: #fff; border: none; border-radius: 8px;
+      padding: 9px 24px; cursor: pointer; font-size: 0.9rem; font-weight: 700;
+      margin-left: auto;
+    }
+    .btn-rates-save:hover { background: #b91c1c; }
+    .rates-validation-msg {
+      font-size: 0.8rem; color: #ef4444; margin-top: 12px; display: none;
+    }
+
+    /* ── Card image tooltip ─────────────────────────────────────────────── */
+    #card-tooltip.loading img { opacity: 0.5; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Page Header ──────────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <h1>🏴‍☠️ One Piece EV Calculator</h1>
+    <p class="subtitle">Live booster box expected value using real-time TCGPlayer prices</p>
+  </div>
+
+  <!-- ── Controls ─────────────────────────────────────────────────────────── -->
+  <div class="controls">
+    <div class="field">
+      <label for="set-select">Set</label>
+      <select id="set-select"><!-- populated via GET /api/sets --></select>
+    </div>
+
+    <div class="field">
+      <label for="box-price">Override Box Price ($)</label>
+      <input type="number" id="box-price" placeholder="Auto (TCGPlayer)" min="0" step="0.01" />
+    </div>
+
+    <button class="btn-analyze" id="btn-analyze">Analyze</button>
+    <button class="btn-pull-rates" id="btn-pull-rates" title="View or edit pull rates for the selected set">⚙️ Pull Rates</button>
+  </div>
+
+  <!-- ── Progress Section ─────────────────────────────────────────────────── -->
+  <div id="progress-section">
+    <h2>⚙️ Analysis Progress</h2>
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill" id="progress-bar-fill"></div>
+      <span class="progress-bar-label" id="progress-bar-label">Step 0/4</span>
+    </div>
+    <p class="progress-status" id="progress-status"></p>
+    <div id="error-banner" class="error-banner" style="display:none"></div>
+  </div>
+
+  <!-- ── Results Section ──────────────────────────────────────────────────── -->
+  <div id="results-section">
+    <div class="results-header">
+      <div class="results-title">
+        <h1 id="results-title">📊 EV Report</h1>
+      </div>
+      <p class="subtitle" id="results-subtitle"></p>
+    </div>
+
+    <!-- Summary banner -->
+    <div class="summary-banner">
+      <div class="stat-card">
+        <div class="label">Box Cost</div>
+        <div class="value" id="stat-box-cost" style="color:#dc2626">—</div>
+        <div class="sub" id="stat-box-cost-sub">Market price (TCGPlayer)</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Expected Box Value</div>
+        <div class="value" id="stat-ev" style="color:#0f172a">—</div>
+        <div class="sub" id="stat-ev-sub">— per pack</div>
+      </div>
+      <div class="stat-card">
+        <div class="label" id="stat-profit-label">Profit / Loss</div>
+        <div class="value" id="stat-profit">—</div>
+        <div class="sub" id="stat-profit-sub">—</div>
+      </div>
+    </div>
+
+    <!-- Slot EV breakdown — 5 slots: Common / Uncommon / Rare / Leader / Hit -->
+    <div class="slot-breakdown" id="slot-breakdown">
+      <div class="slot-chip">
+        <span class="chip-label">Common Slot</span>
+        <span class="chip-val" id="slot-common">—</span>
+      </div>
+      <div class="slot-chip">
+        <span class="chip-label">Uncommon Slot</span>
+        <span class="chip-val" id="slot-uncommon">—</span>
+      </div>
+      <div class="slot-chip">
+        <span class="chip-label">Rare Slot</span>
+        <span class="chip-val" id="slot-rare">—</span>
+      </div>
+      <div class="slot-chip">
+        <span class="chip-label">Leader Slot</span>
+        <span class="chip-val" id="slot-leader">—</span>
+      </div>
+      <div class="slot-chip">
+        <span class="chip-label">Hit Slot</span>
+        <span class="chip-val" id="slot-hit">—</span>
+      </div>
+    </div>
+
+    <!-- Hit Slot Breakdown -->
+    <section id="hit-breakdown-section" style="display:none">
+      <h2>💎 Hit Slot Breakdown by Rarity</h2>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Rarity</th>
+              <th style="text-align:right">Pull Rate</th>
+              <th style="text-align:right">Per Box</th>
+              <th style="text-align:right">Avg Price (Foil)</th>
+              <th style="text-align:right">Box EV</th>
+            </tr>
+          </thead>
+          <tbody id="hit-breakdown-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Spiking Cards -->
+    <section id="spiking-cards-section" style="display:none">
+      <h2>🔥 Price Spikes</h2>
+      <div class="tab-bar">
+        <button class="spike-tab active" id="tab-daily" onclick="showSpikeTab('daily')">Daily</button>
+        <button class="spike-tab" id="tab-weekly" onclick="showSpikeTab('weekly')">Weekly</button>
+      </div>
+      <p id="scan-progress" class="scan-progress-line"></p>
+      <div id="spike-daily-view">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr>
+              <th>Card Name</th><th>Rarity</th>
+              <th style="text-align:right">Recent Avg</th>
+              <th style="text-align:right">Baseline</th>
+              <th style="text-align:right">+%</th>
+              <th style="text-align:right">+$</th>
+              <th style="text-align:right">NM Sales</th>
+            </tr></thead>
+            <tbody id="spike-daily-tbody"></tbody>
+          </table>
+        </div>
+        <p id="spike-daily-empty" class="empty-msg" style="display:none">No daily spikes found for this set.</p>
+      </div>
+      <div id="spike-weekly-view" style="display:none">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr>
+              <th>Card Name</th><th>Rarity</th>
+              <th style="text-align:right">Recent Avg</th>
+              <th style="text-align:right">7d Ago</th>
+              <th style="text-align:right">+%</th>
+              <th style="text-align:right">+$</th>
+              <th style="text-align:right">NM Sales</th>
+            </tr></thead>
+            <tbody id="spike-weekly-tbody"></tbody>
+          </table>
+        </div>
+        <p id="spike-weekly-empty" class="empty-msg" style="display:none">No weekly spikes found for this set.</p>
+      </div>
+    </section>
+
+    <!-- Top 20 Hit Slot Cards -->
+    <section>
+      <h2>💎 Top 20 Most Valuable Hits (SR, SEC, Alt Art, SP, TR…)</h2>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Card Name</th>
+              <th>Rarity</th>
+              <th style="text-align:right">Market Price (Foil)</th>
+              <th style="text-align:right">Weekly Δ</th>
+            </tr>
+          </thead>
+          <tbody id="holo-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Case Hit Cards (< 1-in-50 packs) — SEC, Manga, SP, Alt Art Leader -->
+    <section id="case-hit-section" style="display:none">
+      <h2>🎯 Case Hit Cards (&lt;1 in 50 packs)</h2>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Card Name</th>
+              <th>Rarity</th>
+              <th style="text-align:right">Market Price (Foil)</th>
+              <th style="text-align:right">Weekly Δ</th>
+            </tr>
+          </thead>
+          <tbody id="case-hit-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Disclaimer -->
+    <section>
+      <div class="disclaimer">
+        <strong>⚠️ Pull Rate Disclaimer</strong><br />
+        Pull rates used in this calculator are community estimates — Bandai does not publish official pack odds.
+        Rates are sourced from community data and may not perfectly reflect your experience.
+        EV figures are statistical expectations over a large sample; individual boxes will vary significantly.<br /><br />
+        Card prices are sourced from <a href="https://tcgcsv.com" target="_blank">TCGCSV</a> (a ~24-hour TCGPlayer cache).
+        For manual price verification and additional pull rate research, visit
+        <a href="https://www.tcgplayer.com" target="_blank">TCGPlayer</a>.<br /><br />
+        <strong>💡 Bulk Pricing Note</strong><br />
+        Cards priced below $0.50 on TCGPlayer are valued at $0.01 each in this calculator.
+        TCGPlayer's Market price for low-value cards reflects individual single-sale listings that include ~$0.50 of shipping and fees per card —
+        a price that isn't realistically achievable when opening a box full of commons and uncommons.
+        The $0.01 rate approximates the going bulk rate for those cards.
+      </div>
+    </section>
+  </div>
+
+  <!-- ── Card image tooltip ─────────────────────────────────────────────────── -->
+  <div id="card-tooltip" style="display:none;position:fixed;z-index:9999;pointer-events:none;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,0.55)">
+    <img id="card-tooltip-img" src="" alt="Card image" width="200" style="display:block;border-radius:4px">
+  </div>
+
+  <!-- ── Pull Rates Modal ──────────────────────────────────────────────────── -->
+  <div id="rates-modal-overlay" style="display:none">
+    <div id="rates-modal">
+      <div class="rates-modal-header">
+        <h2 style="margin:0;font-size:1.1rem">⚙️ Pull Rates — <span id="rates-modal-set-name"></span></h2>
+        <button id="rates-modal-close">×</button>
+      </div>
+      <p style="color:#64748b;font-size:0.83rem;margin-bottom:20px">
+        Community-estimated pull rates used in EV calculations. Edits are saved to your browser (localStorage) and persist across sessions.
+        The next Analyze run will use your custom rates. Values are shown as per-pack percentages.
+      </p>
+      <div id="rates-form"></div>
+      <div id="rates-validation-msg" class="rates-validation-msg"></div>
+      <div class="rates-modal-footer">
+        <span id="rates-custom-indicator" style="display:none">★ Custom rates active</span>
+        <button class="btn-rates-reset" id="rates-reset-btn">Reset to Defaults</button>
+        <button class="btn-rates-save" id="rates-save-btn">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── Helpers ─────────────────────────────────────────────────────────────
+    function fmt(n, decimals = 2) {
+      if (n === null || n === undefined || isNaN(n)) return '—';
+      return `$${n.toFixed(decimals)}`;
+    }
+
+    function profitColor(profit) {
+      if (profit > 0) return '#22c55e';
+      if (profit < 0) return '#ef4444';
+      return '#94a3b8';
+    }
+
+    function rarityBadgeColor(rarity) {
+      const map = {
+        'C':              '#64748b',
+        'UC':             '#0ea5e9',
+        'R':              '#7c3aed',
+        'SR':             '#f59e0b',
+        'SEC':            '#ec4899',
+        'L':              '#10b981',
+        'DON!!':          '#f97316',
+        'TR':             '#06b6d4',
+        'SP':             '#a855f7',
+        'PR':             '#22c55e',
+        'Alt Art':        '#db2777',
+        'Alt Art Leader': '#1d4ed8',
+        'Manga':          '#92400e',
+        'Gold DON!!':     '#ca8a04',
+      };
+      return map[rarity] ?? '#64748b';
+    }
+
+    function rarityBadge(rarity) {
+      const color = rarityBadgeColor(rarity);
+      return `<span style="background:${color};color:#fff;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600">${rarity}</span>`;
+    }
+
+    function effectivePrice(entry) {
+      return entry.marketPrice > 0 ? entry.marketPrice : entry.midPrice;
+    }
+
+    // ── Progress bar ──────────────────────────────────────────────────────
+    function updateProgress(step, status, message) {
+      const fill     = document.getElementById('progress-bar-fill');
+      const label    = document.getElementById('progress-bar-label');
+      const statusEl = document.getElementById('progress-status');
+
+      label.textContent = `Step ${step}/4`;
+      if (status === 'done') {
+        fill.style.width = `${(step / 4) * 100}%`;
+        if (message) statusEl.textContent = `✓ ${message}`;
+      } else if (status === 'running') {
+        if (message) statusEl.textContent = `⟳ ${message}`;
+      }
+    }
+
+    // ── Results rendering ─────────────────────────────────────────────────
+    function renderResults(result, packsPerBox) {
+      const profit = result.profit;
+
+      // Summary banner
+      document.getElementById('stat-box-cost').textContent = fmt(result.boxCost);
+      const boxCostSubs = {
+        box:    'Market price (TCGPlayer)',
+        bundle: '6 × Booster Bundle (TCGPlayer)',
+        manual: 'Manual override',
+        unknown:'Price unavailable',
+      };
+      document.getElementById('stat-box-cost-sub').textContent = boxCostSubs[result.boxPriceSource] ?? 'Market price (TCGPlayer)';
+      document.getElementById('stat-ev').textContent = fmt(result.evPerBox);
+      document.getElementById('stat-ev-sub').textContent =
+        `${fmt(result.evPerPack)} per pack · ${packsPerBox} packs`;
+
+      const profitEl = document.getElementById('stat-profit');
+      profitEl.textContent = fmt(Math.abs(profit));
+      profitEl.style.color = profitColor(profit);
+      document.getElementById('stat-profit-label').textContent = profit >= 0 ? '▲ Profit' : '▼ Loss';
+      document.getElementById('stat-profit-sub').textContent   =
+        profit >= 0 ? 'EV exceeds box cost' : 'EV below box cost';
+
+      // Slot breakdown chips — per-box EV (per-pack × packsPerBox)
+      const sb = result.slotBreakdown;
+      if (sb) {
+        document.getElementById('slot-common').textContent   = fmt((sb.commonEv   ?? 0) * packsPerBox);
+        document.getElementById('slot-uncommon').textContent = fmt((sb.uncommonEv ?? 0) * packsPerBox);
+        document.getElementById('slot-rare').textContent     = fmt((sb.rareEv     ?? 0) * packsPerBox);
+        document.getElementById('slot-leader').textContent   = fmt((sb.leaderEv   ?? 0) * packsPerBox);
+        document.getElementById('slot-hit').textContent      = fmt((sb.hitEv      ?? 0) * packsPerBox);
+      }
+
+      // Subtitle
+      const now = new Date().toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
+      const coveragePct = result.totalCardCount > 0
+        ? ((result.pricedCardCount / result.totalCardCount) * 100).toFixed(1)
+        : '?';
+      document.getElementById('results-subtitle').textContent =
+        `Generated ${now} · ${result.pricedCardCount} Foil price entries from ${result.totalCardCount} cards (${coveragePct}% coverage) · Prices via TCGPlayer/TCGCSV`;
+
+      // Top hits table (topPulls = non-case-hit rarities, Foil only, >= $1)
+      const imgUrl = id => `https://product-images.tcgplayer.com/fit-in/400x558/${id}.jpg`;
+
+      const holoHtml = (result.topPulls || []).map(entry => {
+        const rarity   = entry.rarity ?? 'Unknown';
+        const price    = effectivePrice(entry);
+        const spikeKey = `${entry.productId}:${entry.subType}`;
+        return `<tr>
+          <td data-img-src="${imgUrl(entry.productId)}">${entry.name}</td>
+          <td>${rarityBadge(rarity)}</td>
+          <td style="text-align:right;font-weight:600">${fmt(price)}</td>
+          <td class="spike-cell" data-weekly-key="${spikeKey}"><span class="spike-loading">···</span></td>
+        </tr>`;
+      }).join('');
+      document.getElementById('holo-tbody').innerHTML = holoHtml;
+
+      // Case hit section (topCaseHitPulls = Manga/SP/SEC/Alt Art Leader tier, Foil, >= $1)
+      const caseHitPulls = result.topCaseHitPulls ?? [];
+      const caseHitHtml = caseHitPulls.map(entry => {
+        const rarity   = entry.rarity ?? 'Unknown';
+        const price    = effectivePrice(entry);
+        const spikeKey = `${entry.productId}:${entry.subType}`;
+        return `<tr>
+          <td data-img-src="${imgUrl(entry.productId)}">${entry.name}</td>
+          <td>${rarityBadge(rarity)}</td>
+          <td style="text-align:right;font-weight:600">${fmt(price)}</td>
+          <td class="spike-cell" data-weekly-key="${spikeKey}"><span class="spike-loading">···</span></td>
+        </tr>`;
+      }).join('');
+      document.getElementById('case-hit-tbody').innerHTML = caseHitHtml;
+      document.getElementById('case-hit-section').style.display = caseHitPulls.length > 0 ? '' : 'none';
+
+      // Hit slot breakdown table — shows 1-in-X pull rate + per-box count
+      const hitBreakdown = result.hitBreakdown ?? {};
+      const hitRows = Object.entries(hitBreakdown)
+        .sort(([, a], [, b]) => b.evPerBox - a.evPerBox);
+      const hitTotal = hitRows.reduce((sum, [, d]) => sum + d.evPerBox, 0);
+      const hitTbody = document.getElementById('hit-breakdown-tbody');
+      hitTbody.innerHTML = hitRows.map(([rarity, data]) => {
+        const xInPacks = data.fraction > 0 ? Math.round(1 / data.fraction) : '∞';
+        const perBox   = (data.fraction * packsPerBox).toFixed(2);
+        const avgPrice = data.avgPrice !== null ? fmt(data.avgPrice) : '—';
+        return `<tr>
+          <td>${rarityBadge(rarity)}</td>
+          <td style="text-align:right">1 in ${xInPacks} packs</td>
+          <td style="text-align:right">${perBox}/box</td>
+          <td style="text-align:right">${avgPrice}</td>
+          <td style="text-align:right;font-weight:600">${fmt(data.evPerBox)}</td>
+        </tr>`;
+      }).join('') + `<tr style="border-top:2px solid #e2e8f0;font-weight:700">
+        <td colspan="4" style="color:#475569">Total Hit Slot</td>
+        <td style="text-align:right">${fmt(hitTotal)}</td>
+      </tr>`;
+      document.getElementById('hit-breakdown-section').style.display = hitRows.length ? '' : 'none';
+
+      // Show results, then auto-trigger full set scan
+      document.getElementById('results-section').style.display = 'block';
+      const setId = document.getElementById('set-select').value;
+      startSetScan(setId);
+    }
+
+    // ── Main analysis logic ───────────────────────────────────────────────
+    let activeSource = null;
+    let scanSource   = null;
+
+    function resetUI() {
+      document.getElementById('results-section').style.display = 'none';
+      document.getElementById('error-banner').style.display = 'none';
+      document.getElementById('error-banner').textContent = '';
+      document.getElementById('progress-bar-fill').style.width = '0%';
+      document.getElementById('progress-bar-label').textContent = 'Step 0/4';
+      document.getElementById('progress-status').textContent = '';
+      document.getElementById('hit-breakdown-section').style.display = 'none';
+      document.getElementById('spiking-cards-section').style.display = 'none';
+      document.getElementById('case-hit-section').style.display = 'none';
+      document.getElementById('spike-daily-tbody').innerHTML = '';
+      document.getElementById('spike-weekly-tbody').innerHTML = '';
+      document.getElementById('spike-daily-empty').style.display = 'none';
+      document.getElementById('spike-weekly-empty').style.display = 'none';
+      document.getElementById('scan-progress').textContent = '';
+    }
+
+    function showSpikeTab(tab) {
+      document.getElementById('spike-daily-view').style.display  = tab === 'daily'  ? '' : 'none';
+      document.getElementById('spike-weekly-view').style.display = tab === 'weekly' ? '' : 'none';
+      document.getElementById('tab-daily').classList.toggle('active', tab === 'daily');
+      document.getElementById('tab-weekly').classList.toggle('active', tab === 'weekly');
+    }
+
+    // ── Card image hover tooltip ──────────────────────────────────────────
+    (function setupCardTooltip() {
+      const tooltip = document.getElementById('card-tooltip');
+      const img     = document.getElementById('card-tooltip-img');
+
+      function positionTooltip(mx, my) {
+        const W = tooltip.offsetWidth  || 212;
+        const H = tooltip.offsetHeight || 291;
+        let left = mx + 16, top = my + 8;
+        if (left + W > window.innerWidth  - 8) left = mx - W - 16;
+        if (top  + H > window.innerHeight - 8) top  = window.innerHeight - H - 8;
+        if (left < 8) left = 8;
+        if (top  < 8) top  = 8;
+        tooltip.style.left = left + 'px';
+        tooltip.style.top  = top  + 'px';
+      }
+
+      function showTooltip(imgSrc, mx, my) {
+        tooltip.classList.add('loading');
+        tooltip.style.display = 'block';
+        positionTooltip(mx, my);
+        img.onload  = () => tooltip.classList.remove('loading');
+        img.onerror = () => { tooltip.style.display = 'none'; };
+        img.src = imgSrc;
+      }
+
+      function hideTooltip() {
+        tooltip.style.display = 'none';
+        img.src = '';
+      }
+
+      document.addEventListener('mouseover', e => {
+        const td = e.target.closest('[data-img-src]');
+        if (td) showTooltip(td.dataset.imgSrc, e.clientX, e.clientY);
+      });
+      document.addEventListener('mouseout', e => {
+        if (e.target.closest('[data-img-src]')) hideTooltip();
+      });
+      document.addEventListener('mousemove', e => {
+        if (tooltip.style.display === 'block') positionTooltip(e.clientX, e.clientY);
+      });
+    })();
+
+    function startSetScan(setId) {
+      if (scanSource) { scanSource.close(); scanSource = null; }
+
+      // Build weekly-key map from top-pull rows already in the DOM
+      const weeklyKeyMap = new Map();
+      document.querySelectorAll('[data-weekly-key]').forEach(td => {
+        weeklyKeyMap.set(td.dataset.weeklyKey, td);
+      });
+
+      document.getElementById('spiking-cards-section').style.display = '';
+      document.getElementById('scan-progress').textContent = 'Scanning…';
+
+      const src = new EventSource(`/api/scan-set?set=${encodeURIComponent(setId)}`);
+      scanSource = src;
+      let dailyCount = 0, weeklyCount = 0;
+
+      src.addEventListener('progress', (e) => {
+        const d = JSON.parse(e.data);
+        document.getElementById('scan-progress').textContent =
+          `Scanning… ${d.completed} / ${d.total} cards`;
+      });
+
+      src.addEventListener('card-result', (e) => {
+        const d = JSON.parse(e.data);
+        const key = `${d.productId}:${d.subType}`;
+
+        // Update Weekly Δ column in top-pulls tables
+        const cell = weeklyKeyMap.get(key);
+        if (cell) {
+          if (d.weeklyPctChange !== null) {
+            const pct = Math.round(d.weeklyPctChange * 100);
+            const cls = pct > 0 ? 'weekly-up' : pct < 0 ? 'weekly-down' : 'weekly-flat';
+            const arrow = pct > 0 ? '▲' : pct < 0 ? '▼' : '';
+            const sign  = pct > 0 ? '+' : '';
+            const baseline = d.price7dAgo !== null ? `$${d.price7dAgo.toFixed(2)}` : '—';
+            const ttip = `Recent: $${d.recentAvgPrice.toFixed(2)} (${d.recentSalesCount} NM sales) · 7d ago: ${baseline}`;
+            cell.innerHTML = `<span class="${cls}" title="${ttip}">${arrow} ${sign}${pct}%</span>`;
+          } else {
+            cell.innerHTML = `<span class="weekly-flat">—</span>`;
+          }
+        }
+
+        // Daily spikes table
+        if (d.dailySpiking) {
+          dailyCount++;
+          const pct = Math.round(d.dailyPctChange * 100);
+          document.getElementById('spike-daily-tbody').insertAdjacentHTML('beforeend', `
+            <tr>
+              <td>${d.name}</td>
+              <td>${rarityBadge(d.rarity)}</td>
+              <td style="text-align:right">${fmt(d.recentAvgPrice)}</td>
+              <td style="text-align:right">${fmt(d.currentMarketPrice)}</td>
+              <td style="text-align:right;color:#f97316;font-weight:600">+${pct}%</td>
+              <td style="text-align:right;color:#f97316">+${fmt(d.dailyAbsChange)}</td>
+              <td style="text-align:right">${d.recentSalesCount}</td>
+            </tr>`);
+        }
+
+        // Weekly spikes table
+        if (d.weeklySpiking) {
+          weeklyCount++;
+          const pct = Math.round(d.weeklyPctChange * 100);
+          document.getElementById('spike-weekly-tbody').insertAdjacentHTML('beforeend', `
+            <tr>
+              <td>${d.name}</td>
+              <td>${rarityBadge(d.rarity)}</td>
+              <td style="text-align:right">${fmt(d.recentAvgPrice)}</td>
+              <td style="text-align:right">${fmt(d.price7dAgo)}</td>
+              <td style="text-align:right;color:#f97316;font-weight:600">+${pct}%</td>
+              <td style="text-align:right;color:#f97316">+${fmt(d.weeklyAbsChange)}</td>
+              <td style="text-align:right">${d.recentSalesCount}</td>
+            </tr>`);
+        }
+      });
+
+      src.addEventListener('done', () => {
+        document.getElementById('scan-progress').textContent = '';
+        if (dailyCount === 0)  document.getElementById('spike-daily-empty').style.display = '';
+        if (weeklyCount === 0) document.getElementById('spike-weekly-empty').style.display = '';
+        src.close(); scanSource = null;
+      });
+      src.addEventListener('error', () => { src.close(); scanSource = null; });
+    }
+
+    document.getElementById('btn-analyze').addEventListener('click', () => {
+      if (activeSource) { activeSource.close(); activeSource = null; }
+      if (scanSource)   { scanSource.close();   scanSource   = null; }
+      resetUI();
+
+      const btn = document.getElementById('btn-analyze');
+      btn.disabled = true;
+      btn.textContent = 'Analyzing…';
+
+      document.getElementById('progress-section').style.display = 'block';
+
+      const setId         = document.getElementById('set-select').value;
+      const boxPriceInput = document.getElementById('box-price').value.trim();
+      const params = new URLSearchParams();
+      if (setId)         params.set('set', setId);
+      if (boxPriceInput) params.set('boxPrice', boxPriceInput);
+
+      // Include custom pull rates if user has saved any for this set
+      const customRatesRaw = localStorage.getItem(`onepiece-pull-rates-${setId}`);
+      if (customRatesRaw) {
+        try {
+          const parsed = JSON.parse(customRatesRaw);
+          if (parsed.hitDistribution) {
+            params.set('customRates', customRatesRaw);
+          } else {
+            localStorage.removeItem(`onepiece-pull-rates-${setId}`);
+          }
+        } catch { /* malformed — ignore */ }
+      }
+
+      const url    = `/api/analyze?${params.toString()}`;
+      const source = new EventSource(url);
+      activeSource = source;
+
+      source.onmessage = (event) => {
+        let msg;
+        try { msg = JSON.parse(event.data); } catch { return; }
+
+        if (msg.type === 'progress') {
+          updateProgress(msg.step, msg.status, msg.message);
+        } else if (msg.type === 'result') {
+          updateProgress(4, 'done', null);
+          renderResults(msg.data, msg.packsPerBox);
+          finishAnalysis(btn);
+        } else if (msg.type === 'error') {
+          const errorBanner = document.getElementById('error-banner');
+          errorBanner.textContent = `Error: ${msg.message}`;
+          errorBanner.style.display = '';
+          document.getElementById('progress-status').textContent = '✗ Analysis failed';
+          finishAnalysis(btn);
+        }
+      };
+
+      source.onerror = () => {
+        if (activeSource) {
+          const errorBanner = document.getElementById('error-banner');
+          if (errorBanner.style.display === 'none' &&
+              document.getElementById('results-section').style.display === 'none') {
+            errorBanner.textContent = 'Connection lost. The server may be unavailable.';
+            errorBanner.style.display = '';
+            document.getElementById('progress-status').textContent = '✗ Connection lost';
+          }
+          finishAnalysis(btn);
+        }
+        source.close();
+        activeSource = null;
+      };
+    });
+
+    function finishAnalysis(btn) {
+      if (activeSource) { activeSource.close(); activeSource = null; }
+      btn.disabled = false;
+      btn.textContent = 'Analyze';
+    }
+
+    // ── Pull Rates Modal ──────────────────────────────────────────────────
+    let modalCurrentSetId = null;
+    let modalDefaultRates = null;
+
+    function lsKey(setId) { return `onepiece-pull-rates-${setId}`; }
+    function hasCustomRates(setId) { return localStorage.getItem(lsKey(setId)) !== null; }
+
+    function updatePullRatesButtonStyle() {
+      const setId = document.getElementById('set-select').value;
+      const btn = document.getElementById('btn-pull-rates');
+      if (hasCustomRates(setId)) {
+        btn.classList.add('has-custom');
+        btn.title = 'Custom pull rates active for this set — click to edit';
+      } else {
+        btn.classList.remove('has-custom');
+        btn.title = 'View or edit pull rates for the selected set';
+      }
+    }
+
+    async function openRatesModal() {
+      const setId   = document.getElementById('set-select').value;
+      const selEl   = document.getElementById('set-select');
+      const setName = selEl.options[selEl.selectedIndex]?.text ?? setId;
+
+      modalCurrentSetId = setId;
+      document.getElementById('rates-modal-set-name').textContent = setName;
+
+      try {
+        const res = await fetch(`/api/pull-rates?set=${encodeURIComponent(setId)}`);
+        modalDefaultRates = await res.json();
+      } catch { modalDefaultRates = null; }
+
+      const stored = localStorage.getItem(lsKey(setId));
+      let rates = modalDefaultRates;
+      let isCustom = false;
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed.hitDistribution) {
+            rates = parsed; isCustom = true;
+          } else {
+            localStorage.removeItem(lsKey(setId));
+          }
+        } catch {}
+      }
+
+      if (!rates) { alert('Could not load pull rates for this set.'); return; }
+
+      buildRatesForm(rates, isCustom);
+      document.getElementById('rates-modal-overlay').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeRatesModal() {
+      document.getElementById('rates-modal-overlay').style.display = 'none';
+      document.body.style.overflow = '';
+      updatePullRatesButtonStyle();
+    }
+
+    function safeId(str) { return str.replace(/[^a-zA-Z0-9]/g, '_'); }
+
+    function buildRatesForm(rates, hasCustom) {
+      const form = document.getElementById('rates-form');
+      const indicator = document.getElementById('rates-custom-indicator');
+      indicator.style.display = hasCustom ? '' : 'none';
+
+      // Show rate as per-pack percentage; include "1 in X packs" hint beside the label
+      function pctVal(fraction) { return (fraction * 100).toFixed(3); }
+
+      function fieldHtml(id, labelText, fraction) {
+        const xInPacks = fraction > 0 ? Math.round(1 / fraction) : '∞';
+        return `<div class="rates-field">
+          <label for="${id}">${labelText}
+            <span style="color:#94a3b8;font-size:0.78rem">&nbsp;(1 in ${xInPacks} packs)</span>
+          </label>
+          <div class="rates-input-row">
+            <input type="number" id="${id}" value="${pctVal(fraction)}"
+                   data-fraction="${fraction}" step="0.001" min="0" />
+            <span class="rates-suffix">%/pack</span>
+          </div>
+        </div>`;
+      }
+
+      // Only expose hitDistribution for editing — pack counts are resolved server-side
+      let html = `<div class="rates-section-title">💎 Hit Slot Distribution</div>`;
+      const hitDist = rates.hitDistribution ?? {};
+      for (const [rarity, fraction] of Object.entries(hitDist)) {
+        html += fieldHtml(`hit_${safeId(rarity)}`, rarity, fraction);
+      }
+
+      form.innerHTML = html;
+    }
+
+    function getRatesFromForm(baseRates) {
+      // Read edited hitDistribution values; preserve all other resolved rate fields
+      const hitDist = {};
+      for (const rarity of Object.keys(baseRates.hitDistribution ?? {})) {
+        const el = document.getElementById(`hit_${safeId(rarity)}`);
+        hitDist[rarity] = el ? (parseFloat(el.value) / 100) : baseRates.hitDistribution[rarity];
+      }
+      return { ...baseRates, hitDistribution: hitDist };
+    }
+
+    document.getElementById('rates-save-btn').addEventListener('click', () => {
+      if (!modalDefaultRates) return;
+      const rates = getRatesFromForm(modalDefaultRates);
+      localStorage.setItem(lsKey(modalCurrentSetId), JSON.stringify(rates));
+      closeRatesModal();
+    });
+
+    document.getElementById('rates-reset-btn').addEventListener('click', async () => {
+      localStorage.removeItem(lsKey(modalCurrentSetId));
+      try {
+        const res = await fetch(`/api/pull-rates?set=${encodeURIComponent(modalCurrentSetId)}`);
+        modalDefaultRates = await res.json();
+      } catch {}
+      if (modalDefaultRates) buildRatesForm(modalDefaultRates, false);
+    });
+
+    document.getElementById('btn-pull-rates').addEventListener('click', openRatesModal);
+    document.getElementById('rates-modal-close').addEventListener('click', closeRatesModal);
+    document.getElementById('rates-modal-overlay').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('rates-modal-overlay')) closeRatesModal();
+    });
+
+    // ── Populate set dropdown on page load, then auto-analyze ─────────────
+    (async () => {
+      try {
+        const res = await fetch('/api/sets');
+        const sets = await res.json();
+
+        // sets is ordered oldest-first; display newest-first in the dropdown
+        const displaySets = [...sets].reverse();
+        const select = document.getElementById('set-select');
+        for (const s of displaySets) {
+          const opt = document.createElement('option');
+          opt.value = s.id;
+          opt.textContent = s.name;
+          if (s.id === 'op-15') opt.selected = true;
+          select.appendChild(opt);
+        }
+
+        select.addEventListener('change', updatePullRatesButtonStyle);
+        updatePullRatesButtonStyle();
+        document.getElementById('btn-analyze').click();
+      } catch (err) {
+        console.error('Failed to load set list:', err);
+      }
+    })();
+  </script>
+</body>
+</html>

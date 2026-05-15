@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+*.js.map
+*.log
+
+# SQLite database (lives on Railway persistent volume in production)
+*.db
+*.db-shm
+*.db-wal
+
+# Legacy Azure deployment scripts (not used; deploy to Railway instead)
+deploy.sh
+provision.sh

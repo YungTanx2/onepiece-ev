@@ -1,0 +1,12 @@
+[build]
+# nixpacks auto-detects Node; installs build tools (python, make) for better-sqlite3
+buildCommand = "npm ci && npm run build"
+
+[deploy]
+startCommand = "node dist/server.js"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+
+# Environment variables to set in the Railway dashboard:
+#   DB_PATH=/data/price-history.db   (points to the persistent volume mounted at /data)
+#   PORT is injected automatically by Railway

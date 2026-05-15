@@ -1,0 +1,3 @@
+{
+  "_comment": "Per-set overrides for this set. Inherits pull-rates.default.json + pull-rates.global.json. Add keys here only when this set's rates differ from the default."
+}

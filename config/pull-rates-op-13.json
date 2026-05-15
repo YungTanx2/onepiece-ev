@@ -1,0 +1,6 @@
+{
+  "_comment": "OP-13 Carrying On His Will — inherits defaults. TR (Treasure Rare) was introduced around OP-13/14; add rate below when community data is available.",
+  "hitDistribution": {
+    "TR": { "oneInXPacks": 200, "_comment": "PLACEHOLDER — Treasure Rare rate not confirmed; update with real data" }
+  }
+}

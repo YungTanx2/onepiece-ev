@@ -1,0 +1,12 @@
+{
+  "_comment": "Premium Booster -The Best- Vol. 2 (groupId 24305). All-hits box — no C/UC/R filler slots. Global rates (Manga, SP, Alt Art Leader) merge on top. Rates as 1-in-X packs.",
+  "packsPerBox": 24,
+  "hitDistribution": {
+    "SR":         { "oneInXPacks": 3,  "_comment": "Super Rare — 8 per box" },
+    "SEC":        { "oneInXPacks": 20, "_comment": "Secret Rare — 1.2 per box" },
+    "PR":         { "oneInXPacks": 10, "_comment": "Promo Rare — 2.4 per box" },
+    "Alt Art":    { "oneInXPacks": 5,  "_comment": "(Parallel)/(Alt Art) non-Leader — 4.8 per box" },
+    "DON!!":      { "oneInXPacks": 5,  "_comment": "DON!! card — 4.8 per box" },
+    "Gold DON!!": { "oneInXPacks": 40, "_comment": "DON!! (Gold) chase pull — ~1 per 1.7 boxes" }
+  }
+}

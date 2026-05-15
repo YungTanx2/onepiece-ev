@@ -1,0 +1,8 @@
+{
+  "_comment": "Global pull rates — flat per-pack probabilities that apply to EVERY One Piece product regardless of set or box type. These are confirmed community-inferred rates. Do NOT override these in per-set configs without strong data.",
+  "hitDistribution": {
+    "Manga":          { "oneInXPacks": 1000, "_comment": "Manga Art variants — true chase pull, ~1 per 42 boxes" },
+    "SP":             { "oneInXPacks": 144,  "_comment": "Special cards (incl. Wanted Poster variants), ~1 per 6 boxes" },
+    "Alt Art Leader": { "oneInXPacks": 72,   "_comment": "Leader (Parallel)/(Alternate Art) variants, ~1 per 3 boxes" }
+  }
+}
