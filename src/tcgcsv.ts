@@ -48,18 +48,20 @@ function extractBaseRarity(extendedData: ExtendedDataEntry[] = []): string | nul
  *   (Parallel) or (Alternate Art)  on other → 'Alt Art'
  *   (Manga)                        on any   → 'Manga'
  *   (Wanted Poster)                on any   → 'SP'  (rarity promotion)
- *   (SP)                           on any   → 'SP'  (Special print — high-value variant)
+ *   (SP)                           on any   → 'SP'        (Special print — high-value variant)
+ *   (Dash Pack)                    on any   → 'Dash Pack' (bonus promo pack, not a booster pull)
  *   (Gold)                         on DON!! → 'Gold DON!!'
  *   (Gold)                         on other → log warning, keep base rarity
  *   no suffix                               → base rarity unchanged
  *
  * Note: TCGCSV stores the BASE card rarity in extendedData for variant prints,
  * then distinguishes the variant via the product name suffix — the same pattern
- * used for Alt Arts. Without (SP) detection, these $200–500 Special prints would
- * be averaged into SR/R filler buckets, massively inflating those slot EVs.
+ * used for Alt Arts. Without (SP) detection, these $200–500 Special prints get
+ * averaged into SR/R filler buckets, massively inflating those slot EVs.
+ * Without (Dash Pack) detection, promo-only UC Foil cards inflate the UC slot.
  */
 function resolveRarity(baseRarity: string, productName: string): Rarity {
-  const m = productName.match(/\((Parallel|Alternate Art|Manga|Wanted Poster|SP|Gold)\)\s*$/i);
+  const m = productName.match(/\((Parallel|Alternate Art|Manga|Wanted Poster|SP|Dash Pack|Gold)\)\s*$/i);
   if (!m) return baseRarity as Rarity;
 
   const label = m[1].toLowerCase();
@@ -72,6 +74,11 @@ function resolveRarity(baseRarity: string, productName: string): Rarity {
   }
   if (label === 'wanted poster' || label === 'sp') {
     return 'SP';
+  }
+  if (label === 'dash pack') {
+    // Dash Pack cards ship in a bonus promotional product, not from standard boosters.
+    // Route to 'Dash Pack' bucket so they're excluded from filler slot averages (no pull rate).
+    return 'Dash Pack';
   }
   if (label === 'gold') {
     if (baseRarity === 'DON!!') return 'Gold DON!!';

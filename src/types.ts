@@ -19,14 +19,16 @@ export type BaseRarity =
 //   (Parallel) or (Alternate Art)  on other → 'Alt Art'
 //   (Manga)                        on any   → 'Manga'
 //   (Wanted Poster)                on any   → 'SP'  (rarity promotion, not its own bucket)
-//   (SP)                           on any   → 'SP'  (Special print; base rarity kept in extendedData)
+//   (SP)                           on any   → 'SP'        (Special print; base rarity kept in extendedData)
+//   (Dash Pack)                    on any   → 'Dash Pack' (bonus promo pack — excluded from booster EV)
 //   (Gold)                         on DON!! → 'Gold DON!!'
 export type Rarity =
   | BaseRarity
   | 'Alt Art'        // (Parallel)/(Alternate Art) on non-Leader — flat 1-in-12 default rate
   | 'Alt Art Leader' // (Parallel)/(Alternate Art) on Leader    — flat 1-in-72 global rate
   | 'Manga'          // (Manga) on any card                     — flat 1-in-1000 global rate
-  | 'Gold DON!!';    // (Gold) on DON!! cards                   — Premium-only chase pull
+  | 'Gold DON!!'     // (Gold) on DON!! cards                   — Premium-only chase pull
+  | 'Dash Pack';     // (Dash Pack) — not a booster pull; excluded from EV (no pull rate in config)
 
 // TCGCSV subType names for One Piece cards.
 // Each productId is exclusively one OR the other — never both for the same card.
