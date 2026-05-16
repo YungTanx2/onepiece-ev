@@ -52,8 +52,9 @@ app.get('/api/analyze', async (req, res) => {
   }
 
   // ── Query params ─────────────────────────────────────────────────────────
-  const boxPriceParam = (req.query.boxPrice as string | undefined)?.trim();
-  const setId = (req.query.set as string | undefined)?.trim() ?? DEFAULT_SET_ID;
+  const boxPriceParam    = (req.query.boxPrice as string | undefined)?.trim();
+  const setId            = (req.query.set as string | undefined)?.trim() ?? DEFAULT_SET_ID;
+  const excludeCaseHits  = req.query.excludeCaseHits === 'true';
 
   const setDef = SUPPORTED_SETS.find((s) => s.id === setId);
   if (!setDef) {
@@ -153,7 +154,7 @@ app.get('/api/analyze', async (req, res) => {
     const entries = matchPrices(products, prices);
     const foilPricedCount = new Set(entries.filter(e => e.subType === 'Foil').map(e => e.productId)).size;
 
-    const result = calculateEV(entries, pullRates, boxCost);
+    const result = calculateEV(entries, pullRates, boxCost, excludeCaseHits);
     result.totalCardCount  = cards.length;
     result.pricedCardCount = foilPricedCount;
     result.boxPriceSource  = boxPriceSource;

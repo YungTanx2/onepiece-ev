@@ -15,8 +15,12 @@ export type BaseRarity =
 // These do NOT appear in extendedData.Rarity — they are synthetic.
 //
 // Detection rules (in order):
+//   (SP) (Gold)                    on any   → 'SP Gold'        (metallic gold SP treatment — ultra-rare)
+//   (SP) (Silver)                  on any   → 'SP Silver'      (metallic silver SP treatment — ultra-rare)
 //   (Parallel) or (Alternate Art)  on L     → 'Alt Art Leader'
 //   (Parallel) or (Alternate Art)  on other → 'Alt Art'
+//   (Red Super Alternate Art)      on any   → 'Super Alt Art'  (ultra-high-value SEC variant)
+//   (Super Alternate Art)          on any   → 'Super Alt Art'
 //   (Manga)                        on any   → 'Manga'
 //   (Wanted Poster)                on any   → 'SP'  (rarity promotion, not its own bucket)
 //   (SP)                           on any   → 'SP'        (Special print; base rarity kept in extendedData)
@@ -28,7 +32,10 @@ export type Rarity =
   | 'Alt Art Leader' // (Parallel)/(Alternate Art) on Leader    — flat 1-in-72 global rate
   | 'Manga'          // (Manga) on any card                     — flat 1-in-1000 global rate
   | 'Gold DON!!'     // (Gold) on DON!! cards                   — Premium-only chase pull
-  | 'Dash Pack';     // (Dash Pack) — not a booster pull; excluded from EV (no pull rate in config)
+  | 'Dash Pack'      // (Dash Pack) — not a booster pull; excluded from EV (no pull rate in config)
+  | 'SP Gold'        // (SP) (Gold)   — metallic gold SP treatment; pull rate unknown, $0 EV
+  | 'SP Silver'      // (SP) (Silver) — metallic silver SP treatment; pull rate unknown, $0 EV
+  | 'Super Alt Art'; // (Super/Red Super Alternate Art) — ultra-high-value SEC variants; pull rate unknown
 
 // TCGCSV subType names for One Piece cards.
 // Each productId is exclusively one OR the other — never both for the same card.
@@ -98,6 +105,8 @@ export interface EvResult {
   slotBreakdown: SlotBreakdown;
   /** Per-rarity EV breakdown for the hit slot, keyed by rarity name. */
   hitBreakdown: Record<string, HitRarityBreakdown>;
+  /** True when the EV was calculated with case-hit rarities zeroed out. */
+  excludedCaseHits: boolean;
   pricedCardCount: number;
   totalCardCount: number;
 }
