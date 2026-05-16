@@ -10,9 +10,9 @@ export type { ResolvedPullRates };
 /**
  * Threshold for classifying a hit as a "case hit" (very rare pull).
  * Rarities with P(per pack) below this appear in topCaseHitPulls rather than topPulls.
- * 1/50 packs ≈ 0.02 — roughly "less than 1 per 2 boxes".
+ * 1/100 packs = 0.01 — roughly "less than 1 per 4 boxes".
  */
-const CASE_HIT_THRESHOLD = 0.02;
+const CASE_HIT_THRESHOLD = 0.01;
 
 /**
  * Per-card bulk threshold. Cards below $0.50 are realistically sold to bulk buyers
@@ -57,7 +57,13 @@ function getGroup(grouped: Map<string, PriceEntry[]>, rarity: string, subType: s
 const ALL_RARITIES: Rarity[] = [
   'C', 'UC', 'R', 'SR', 'SEC', 'L', 'DON!!', 'TR', 'SP', 'PR',
   'Alt Art', 'Alt Art Leader', 'Manga', 'Gold DON!!',
+  'SP Gold', 'SP Silver', 'Super Alt Art',
 ];
+
+// Rarities that always surface in topCaseHitPulls even without a configured pull rate.
+// These are ultra-rare variants introduced after initial pull-rate research; pull rates
+// are unknown so they contribute $0 to EV, but should still be visible in the UI.
+const ALWAYS_CASE_HIT = new Set<string>(['SP Gold', 'SP Silver', 'Super Alt Art']);
 
 /**
  * Calculate expected value (EV) for a One Piece booster box.
@@ -82,6 +88,7 @@ export function calculateEV(
   entries: PriceEntry[],
   pullRates: ResolvedPullRates,
   boxCost: number,
+  excludeCaseHits = false,
 ): EvResult {
   const { packsPerBox, commonCount, uncommonCount, rareCount, leaderPerPack, hitDistribution, isStandard } = pullRates;
 
@@ -134,6 +141,7 @@ export function calculateEV(
       .filter(([, fraction]) => fraction < CASE_HIT_THRESHOLD)
       .map(([rarity]) => rarity),
   );
+  for (const r of ALWAYS_CASE_HIT) caseHitRarities.add(r);
 
   let hitEv = 0;
   const hitBreakdown: Record<string, HitRarityBreakdown> = {};
@@ -146,7 +154,8 @@ export function calculateEV(
     }
 
     const price  = byRarity[rarity]?.avgFoilPrice ?? null;
-    const ev     = fraction * (price ?? 0);
+    const isCaseHit = caseHitRarities.has(rarity);
+    const ev     = fraction * (excludeCaseHits && isCaseHit ? 0 : (price ?? 0));
     hitEv += ev;
     if (byRarity[rarity]) byRarity[rarity].evContribution += ev;
     hitBreakdown[rarity] = { fraction, avgPrice: price, evPerBox: ev * packsPerBox };
@@ -193,6 +202,7 @@ export function calculateEV(
     topCaseHitPulls,
     slotBreakdown,
     hitBreakdown,
+    excludedCaseHits: excludeCaseHits,
     pricedCardCount: new Set(entries.filter(e => e.subType === 'Foil').map(e => e.productId)).size,
     totalCardCount: 0, // populated by server.ts after extractCards
   };

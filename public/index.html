@@ -319,6 +319,13 @@
 
     <button class="btn-analyze" id="btn-analyze">Analyze</button>
     <button class="btn-pull-rates" id="btn-pull-rates" title="View or edit pull rates for the selected set">⚙️ Pull Rates</button>
+
+    <div class="field" style="justify-content:flex-end">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:0.85rem;color:#64748b;font-weight:500">
+        <input type="checkbox" id="exclude-case-hits" style="width:16px;height:16px;cursor:pointer;accent-color:#dc2626" />
+        Exclude Case Hits (&lt;1/100 packs)
+      </label>
+    </div>
   </div>
 
   <!-- ── Progress Section ─────────────────────────────────────────────────── -->
@@ -337,6 +344,7 @@
     <div class="results-header">
       <div class="results-title">
         <h1 id="results-title">📊 EV Report</h1>
+        <span id="case-hit-badge" style="display:none;background:#7c3aed;color:#fff;padding:4px 12px;border-radius:9999px;font-size:13px;font-weight:700">⚡ Case Hits Excluded</span>
       </div>
       <p class="subtitle" id="results-subtitle"></p>
     </div>
@@ -463,9 +471,9 @@
       </div>
     </section>
 
-    <!-- Case Hit Cards (< 1-in-50 packs) — SEC, Manga, SP, Alt Art Leader -->
+    <!-- Case Hit Cards (< 1-in-100 packs) — SEC, Manga, SP, Alt Art Leader, SP Gold, SP Silver, Super Alt Art -->
     <section id="case-hit-section" style="display:none">
-      <h2>🎯 Case Hit Cards (&lt;1 in 50 packs)</h2>
+      <h2>🎯 Case Hit Cards (&lt;1 in 100 packs)</h2>
       <div class="table-wrapper">
         <table>
           <thead>
@@ -555,6 +563,9 @@
         'Alt Art Leader': '#1d4ed8',
         'Manga':          '#92400e',
         'Gold DON!!':     '#ca8a04',
+        'SP Gold':        '#b45309',
+        'SP Silver':      '#475569',
+        'Super Alt Art':  '#be123c',
       };
       return map[rarity] ?? '#64748b';
     }
@@ -656,6 +667,7 @@
       }).join('');
       document.getElementById('case-hit-tbody').innerHTML = caseHitHtml;
       document.getElementById('case-hit-section').style.display = caseHitPulls.length > 0 ? '' : 'none';
+      document.getElementById('case-hit-badge').style.display = result.excludedCaseHits ? '' : 'none';
 
       // Hit slot breakdown table — shows 1-in-X pull rate + per-box count
       const hitBreakdown = result.hitBreakdown ?? {};
@@ -700,6 +712,7 @@
       document.getElementById('hit-breakdown-section').style.display = 'none';
       document.getElementById('spiking-cards-section').style.display = 'none';
       document.getElementById('case-hit-section').style.display = 'none';
+      document.getElementById('case-hit-badge').style.display = 'none';
       document.getElementById('spike-daily-tbody').innerHTML = '';
       document.getElementById('spike-weekly-tbody').innerHTML = '';
       document.getElementById('spike-daily-empty').style.display = 'none';
@@ -857,6 +870,7 @@
       const params = new URLSearchParams();
       if (setId)         params.set('set', setId);
       if (boxPriceInput) params.set('boxPrice', boxPriceInput);
+      if (document.getElementById('exclude-case-hits').checked) params.set('excludeCaseHits', 'true');
 
       // Include custom pull rates if user has saved any for this set
       const customRatesRaw = localStorage.getItem(`onepiece-pull-rates-${setId}`);
@@ -1040,6 +1054,13 @@
     document.getElementById('rates-modal-overlay').addEventListener('click', (e) => {
       if (e.target === document.getElementById('rates-modal-overlay')) closeRatesModal();
     });
+
+    // ── Persist case-hits checkbox across sessions ────────────────────────
+    (function() {
+      const cb = document.getElementById('exclude-case-hits');
+      cb.checked = localStorage.getItem('onepiece-exclude-case-hits') === 'true';
+      cb.addEventListener('change', () => localStorage.setItem('onepiece-exclude-case-hits', cb.checked));
+    })();
 
     // ── Populate set dropdown on page load, then auto-analyze ─────────────
     (async () => {

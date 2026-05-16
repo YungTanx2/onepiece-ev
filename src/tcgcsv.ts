@@ -44,8 +44,12 @@ function extractBaseRarity(extendedData: ExtendedDataEntry[] = []): string | nul
  * Rarity bucket. This is the canonical implementation of the 5-rule variant table.
  *
  * Rules (applied in order — first match wins):
+ *   (SP) (Gold)                    on any   → 'SP Gold'        (metallic gold SP; ultra-rare)
+ *   (SP) (Silver)                  on any   → 'SP Silver'      (metallic silver SP; ultra-rare)
  *   (Parallel) or (Alternate Art)  on L     → 'Alt Art Leader'
  *   (Parallel) or (Alternate Art)  on other → 'Alt Art'
+ *   (Red Super Alternate Art)      on any   → 'Super Alt Art'  (ultra-high-value SEC variant)
+ *   (Super Alternate Art)          on any   → 'Super Alt Art'
  *   (Manga)                        on any   → 'Manga'
  *   (Wanted Poster)                on any   → 'SP'  (rarity promotion)
  *   (SP)                           on any   → 'SP'        (Special print — high-value variant)
@@ -59,15 +63,27 @@ function extractBaseRarity(extendedData: ExtendedDataEntry[] = []): string | nul
  * used for Alt Arts. Without (SP) detection, these $200–500 Special prints get
  * averaged into SR/R filler buckets, massively inflating those slot EVs.
  * Without (Dash Pack) detection, promo-only UC Foil cards inflate the UC slot.
+ * (SP) (Gold) and (SP) (Silver) must be tested before the single-suffix regex
+ * since the regex only anchors the last parenthetical — (Gold)/(Silver) would
+ * otherwise shadow the (SP) intent.
  */
 function resolveRarity(baseRarity: string, productName: string): Rarity {
-  const m = productName.match(/\((Parallel|Alternate Art|Manga|Wanted Poster|SP|Dash Pack|Gold)\)\s*$/i);
+  // Double-suffix SP variants — must run before the single-suffix regex.
+  const doubleSp = productName.match(/\(SP\)\s*\((Gold|Silver)\)\s*$/i);
+  if (doubleSp) {
+    return doubleSp[1].toLowerCase() === 'gold' ? 'SP Gold' : 'SP Silver';
+  }
+
+  const m = productName.match(/\((Parallel|Alternate Art|Red Super Alternate Art|Super Alternate Art|Manga|Wanted Poster|SP|Dash Pack|Gold)\)\s*$/i);
   if (!m) return baseRarity as Rarity;
 
   const label = m[1].toLowerCase();
 
   if (label === 'parallel' || label === 'alternate art') {
     return baseRarity === 'L' ? 'Alt Art Leader' : 'Alt Art';
+  }
+  if (label === 'red super alternate art' || label === 'super alternate art') {
+    return 'Super Alt Art';
   }
   if (label === 'manga') {
     return 'Manga';
