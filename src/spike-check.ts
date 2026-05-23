@@ -6,6 +6,17 @@ const MIN_RECENT_UNITS   = 3;
 const MIN_ABS_CHANGE     = 1.0;
 const PCT_THRESHOLD      = 0.25;
 const RECENT_SALES_COUNT = 10;
+const MAX_SALE_AGE_DAYS  = 5;
+const MAX_SALE_AGE_MS    = MAX_SALE_AGE_DAYS * 24 * 60 * 60 * 1000;
+
+function isRecentEnough(sales: { orderDate: string }[]): boolean {
+  let newest = 0;
+  for (const s of sales) {
+    const ts = new Date(s.orderDate).getTime();
+    if (ts > newest) newest = ts;
+  }
+  return newest > 0 && newest >= Date.now() - MAX_SALE_AGE_MS;
+}
 
 /**
  * Fetch latestsales for one card and compute both daily and weekly spike metrics
@@ -36,6 +47,8 @@ export async function scanCard(
     const nmSales = sales
       .filter(s => { const c = s.condition.toLowerCase(); return c.includes('near mint') || c === 'nm'; })
       .filter(s => s.variant === subType);
+
+    if (!isRecentEnough(nmSales)) return base;
 
     const recent = nmSales.slice(0, RECENT_SALES_COUNT);
     const units  = recent.reduce((a, s) => a + s.quantity, 0);
